@@ -9,7 +9,7 @@
 
 # 🪝HAKEN
 
-Normally, running a function yields a single result. With [**HAKEN**](.), you can run a function in a specific context, allowing the function to also register some hooks, which you can then call in response to future events.
+Normally, running a function yields a single result. With [**HAKEN**](.), you can run a function in a specific context, allowing the function to  register some hooks, which you can then call in response to future events.
 
 ```ts
 // Setup:
@@ -39,15 +39,15 @@ hooks.onMessage && source.addListener('message', hooks.onMessage)
 
 ## Who is this for?
 
-[**HAKEN**](.) is useful for when you want to allow someone else write the functions that might benefit using the hooks. If you are writing a framework, or providing some form of inversion of control, and want to allow user functions to be able to _hook_ into various aspects of your _host_ code / environment, perhaps [**HAKEN**](.) is useful for you.
+If you are writing a framework, or providing some form of inversion of control, and want to allow _user functions_ (written by someone else) to be able to _hook_ into various aspects of your _host_ code / environment, [**HAKEN**](.) can come in handy.
 
 <br>
 
 ## Why?
 
-The same thing can be effectively achieved with classes: the _user function_ (perhaps a constructor) can return an instance with some methods, and the _host_ code can later on call those methods.
+What [**HAKEN**](.) does can also be achieved by using classes instead of functions. A _user function_ can return an instance (perhaps it is a constructor), which provides methods that your _host code_ can then invoke in response to later events.
 
-The main difference is composability: _user functions_ can use custom hooks, which can arbitrarily invoke the original hooks:
+The main difference between OOP and the hooks pattern is composability: repeated patterns can be isolated into _custom hooks_, which can arbitrarily invoke the original hooks:
 
 ```ts
 export const useGreeter = () => {
@@ -59,7 +59,7 @@ export const useGreeter = () => {
 }
 ```
 
-To achieve the same composability with classes and methods, you either need to inherit classes, which are pretty limiting due to single-inheritance, or use mixins, which are way more complicated to make.
+With custom hooks, one hook can tap into 2 of the original hooks, another can override a third, and another can add functionality to one of those hooks again. This level of flexibility (and the reusability of logic that comes with it) is pretty difficult to achieve with OOP, specifically when limited by a single inheritance model. Even in a multiple inheritance model, you would need to disambiguate overlapping overrides manually, while the hooks pattern can take care of that based on the more limited scope of hooks (as they are mere side-effects, so they can all be invoked in response to an event).
 
 <br>
 
