@@ -1,18 +1,21 @@
-export type Hooks = Record<string, Function>
+export type Hook<F> = F extends (...args: any[]) => infer R ? R extends void ? F : never : never
+export type Hooks<H extends Record<string, Function>> = {
+  [K in keyof H]: H[K] extends Hook<H[K]> ? H[K] : never
+}
 export type Meta = Record<string, unknown>
 
-export type HookResult<H extends Hooks, M extends Meta> = {
+export type HookResult<H extends Hooks<H>, M extends Meta> = {
   hooks: Partial<H>,
   meta: Partial<M>,
 }
 
-type Frame<H extends Hooks, M extends Meta> = {
+type Frame<H extends Hooks<H>, M extends Meta> = {
   hooks: { [K in keyof H]?: H[K] | H[K][] }
   meta: Partial<M>
 }
 
 
-function prepareFrame<H extends Hooks, M extends Meta>(frame: Frame<H, M>): HookResult<H, M> {
+function prepareFrame<H extends Hooks<H>, M extends Meta>(frame: Frame<H, M>): HookResult<H, M> {
   const result: any = { meta: frame.meta, hooks: {} }
   for (const key in frame.hooks) {
     const value = frame.hooks[key]
@@ -33,7 +36,7 @@ function prepareFrame<H extends Hooks, M extends Meta>(frame: Frame<H, M>): Hook
 }
 
 
-export function buildHooksContext<H extends Hooks, M extends Meta = {}>() {
+export function buildHooksContext<H extends Hooks<H>, M extends Meta = {}>() {
   const stack: Frame<H, M>[] = []
 
   return {
@@ -51,7 +54,7 @@ export function buildHooksContext<H extends Hooks, M extends Meta = {}>() {
 
     hook<
       K extends keyof H,
-      F extends NonNullable<H[K]>,
+      F extends Hook<H[K]>,
     >(key: K) {
       return (hook: F) => {
         const frame = stack[stack.length - 1]
@@ -59,7 +62,7 @@ export function buildHooksContext<H extends Hooks, M extends Meta = {}>() {
           const currentHook = frame.hooks[key]
           if (currentHook) {
             if (Array.isArray(currentHook)) {
-              currentHook.push(hook as any)
+              (currentHook as any).push(hook)
             } else {
               frame.hooks[key] = [currentHook, hook as any]
             }
@@ -70,7 +73,7 @@ export function buildHooksContext<H extends Hooks, M extends Meta = {}>() {
       }
     },
 
-    currentMeta(): Partial<M> {
+    hooksMeta(): Partial<M> {
       return stack[stack.length - 1]?.meta || {}
     }
   }

@@ -1,7 +1,7 @@
 import { buildHooksContext } from '../src'
 
 
-const { acceptHooks, hook } = buildHooksContext<{
+const { acceptHooks, hook, hooksMeta } = buildHooksContext<{
   onA: () => void,
   onB: (name: string) => void,
 }, { x: number }>()
@@ -10,8 +10,9 @@ const onA = hook('onA')
 const onB = hook('onB')
 
 const fn = () => {
-  onA(() => { console.log('A') })
+  onA(() => { return 42 })
   onB((name) => { console.log('B:' + name) })
+  hooksMeta().x = 42
 
   return 42
 }

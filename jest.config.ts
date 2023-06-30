@@ -2,10 +2,6 @@ export default {
   preset: 'ts-jest',
   verbose: true,
   clearMocks: true,
-  testEnvironment: 'jsdom',
-  testEnvironmentOptions: {
-    url: 'http://localhost',
-  },
   testMatch: ['**/test/**/*.test.[jt]s?(x)'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
