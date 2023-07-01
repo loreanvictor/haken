@@ -11,15 +11,15 @@
 
 Normally, running a function yields a single result. With [**HAKEN**](.), you can run a function in a specific context, allowing the function to  register some hooks, which you can then call in response to future events.
 
-```ts
+```js
 // Setup:
 import { buildHooksContext } from 'haken'
 
-const { acceptHooks, hook } = buildHooksContext<{ onMessage: (msg: string) => void}>()
+const { acceptHooks, hook } = buildHooksContext()
 
 export const onMessage = hook('onMessage')
 ```
-```ts
+```js
 // Use in functions:
 export const createHistory = () => {
   const history = []
@@ -28,12 +28,25 @@ export const createHistory = () => {
   return history
 }
 ```
-```ts
+```js
 // Use those functions in a hookable context:
 
 const [history, {hooks}] = acceptHooks(() => createHistory())
 hooks.onMessage && source.addListener('message', hooks.onMessage)
 ```
+
+<br>
+
+## Contents
+
+- [Who is this for?](#who-is-this-for)
+- [Why?](#why)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Meta](#meta)
+  - [Type Safety](#type-safety)
+- [Contribution](#contribution)
+
 
 <br>
 
@@ -47,7 +60,7 @@ If you are writing a framework, or providing some form of inversion of control, 
 
 What [**HAKEN**](.) does can also be achieved by using classes instead of functions. A _user function_ can return an instance (perhaps it is a constructor), which provides methods that your _host code_ can then invoke in response to later events.
 
-The main difference between OOP and the hooks pattern is composability: repeated patterns can be isolated into _custom hooks_, which can arbitrarily invoke the original hooks:
+The main difference between OOP and the hooks pattern is flexibility and composability: with hooks, it is much easier to bundle repeating patterns of logic into custom hooks and easily re-use them, while in OOP, specifically in a single-inheritance model, this level of composition quickly turns into a headache.
 
 ```ts
 export const useGreeter = () => {
@@ -59,11 +72,134 @@ export const useGreeter = () => {
 }
 ```
 
-With custom hooks, one hook can tap into 2 of the original hooks, another can override a third, and another can add functionality to one of those hooks again. This level of flexibility (and the reusability of logic that comes with it) is pretty difficult to achieve with OOP, specifically when limited by a single inheritance model. Even in a multiple inheritance model, you would need to disambiguate overlapping overrides manually, while the hooks pattern can take care of that based on the more limited scope of hooks (as they are mere side-effects, so they can all be invoked in response to an event).
+A custom hook is analogous to a custom base class you can inherit from, and registering a hook is equivalent to overriding a parent method. From this perspective, for example, with hooks you can:
+
+- Inherit from different base classes, who override different methods
+- Override a parent method multiple times
+- Conditionally inherit from some base class
+
+Which makes the hooks pattern even more flexible than OOP with multiple inheritance (this is in part due to the scope of hooks being more limited than generic methods: they are supposed to run some side-effect in response to some event, which means you can trivially combine them and disambiguate them).
 
 <br>
 
-# Contribution
+## Installation
+
+```js
+import { buildHooksContext } from 'https://esm.sh/haken'
+```
+Or
+```bash
+npm i haken
+```
+
+<br>
+
+## Usage
+
+Step 1: build a hooks context and expose its functions to _user land_:
+
+```js
+import { buildHooksContext } from 'haken'
+
+// build the context
+const { acceptHooks, hook } = buildHooksContext() 
+
+// expose the hooks
+export const onMessage = hook('onMessage')
+export const onClose = hook('onClose')
+export const onError = hook('onError')
+```
+
+Step 2: use the exposed hooks in _user land_ (or allow your users to):
+
+```js
+export function setupLogger() {
+  onMessage(msg => console.log('received: ' + msg))
+  onClose(() => console.log('closed!')
+}
+```
+
+Step 3: run _user land_ functions with `acceptHooks()` and hook their hooks.
+
+```js
+const [result, { hooks }] = acceptHooks(() => setupLogger())
+
+hooks.onMessage && socket.addEventListener('msg', hooks.onMessage)
+hooks.onClose && socket.addEventListener('close', hooks.onClose)
+hooks.onError && socket.addEventListener('error', hooks.onError)
+```
+
+<br>
+
+### Meta
+
+Custom hooks might need some additional metadata about the _host context_. Provide such metadata as the second argument to `acceptHooks()`:
+
+```js
+const [result, { hooks }] = acceptHooks(
+  () => setupLogger(),
+  { socket }             // 👉 this is the metadata
+)
+```
+
+For accessing this metadata, use the `hooksMeta()` function returned by `buildHooksContext()`. It is recommended to provide wrapper functions for such access instead of providing direct, uncontrolled access to the metadata.
+
+```js
+const { acceptHooks, hook, hooksMeta } = buildHooksContext()
+
+export const onMessage = hook('onMessage')
+export const onClose = hook('onClose')
+export const onError = hook('onError')
+
+// 👇 user functions and custom hooks can call this to access
+//    the current socket.
+export const currentSocket = () => hooksMeta().socket
+```
+
+User functions or custom hooks might also add some metadata of their own, which you can check by reading the `meta` key returned by `acceptHooks()` function:
+
+```js
+const [result, {
+  hooks,
+  meta     // 👉 metadata, possibly modified by custom hooks
+}] = acceptHooks(() => setupLogger(), { socket })
+```
+
+<br>
+
+### Type Safety
+
+Provide the types of hooks you want for your hooks context as a type argument to `buildHooksContext()`:
+
+```ts
+type Hooks = {
+  onMessage: (msg: string) => void,
+  onClose: () => void,
+  onError: (err: any, callsite: Callsite) => void,
+}
+
+const { acceptHooks, hook, hooksMeta } = buildHooksContext<Hooks>()
+```
+
+You can also enforce the type of the metadata, by passing a second type argument:
+
+```ts
+type Hooks = {
+  onMessage: (msg: string) => void,
+  onClose: () => void,
+  onError: (err: any, callsite: Callsite) => void,
+}
+
+type Meta = {
+  socket: WebSocket
+}
+
+const { acceptHooks, hook, hooksMeta } = buildHooksContext<Hooks, Meta>()
+```
+
+<br>
+
+## Contribution
 
 You need [node](https://nodejs.org/en/), [NPM](https://www.npmjs.com) to start and [git](https://git-scm.com) to start.
 
