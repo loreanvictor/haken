@@ -35,6 +35,12 @@ const [history, {hooks}] = acceptHooks(() => createHistory())
 hooks.onMessage && source.addListener('message', hooks.onMessage)
 ```
 
+<div align="right">
+
+[**▷ TRY IT**](https://codepen.io/lorean_victor/pen/mdQmXXa)
+
+</div>
+
 <br>
 
 ## Contents
@@ -72,13 +78,13 @@ export const useGreeter = () => {
 }
 ```
 
-A custom hook is analogous to a custom base class you can inherit from, and registering a hook is equivalent to overriding a parent method. From this perspective, for example, with hooks you can:
+A custom hook is analogous to a custom base class you can inherit from, and registering a hook is equivalent to overriding a parent method. This means with hooks you can do compositions that would be equivalent to the following in OOP:
 
 - Inherit from different base classes, who override different methods
 - Override a parent method multiple times
 - Conditionally inherit from some base class
 
-Which makes the hooks pattern even more flexible than OOP with multiple inheritance (this is in part due to the scope of hooks being more limited than generic methods: they are supposed to run some side-effect in response to some event, which means you can trivially combine them and disambiguate them).
+This makes the hooks pattern even more flexible than OOP with multiple inheritance (this is in part due to the scope of hooks being more limited than generic methods: they are supposed to run some side-effect in response to some event, which means you can trivially combine and disambiguate them).
 
 <br>
 
